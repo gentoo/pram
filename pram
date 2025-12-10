@@ -408,6 +408,20 @@ main() {
 			add_trailer "${patches[-1]}" "${trailer}: ${to_close}"
 		fi
 	fi
+	# Append committer signed-off-by (only if missing)
+	if [[ -n ${signoff} ]]; then
+		local username="$(git config user.name)"
+		local useremail="$(git config user.email)"
+		local my_gitconf=(
+			-c trailer.sign.key="Signed-off-by: "
+			-c trailer.sign.ifmissing=add
+			-c trailer.sign.ifexists=addIfDifferent
+		)
+
+		git "${my_gitconf[@]}" interpret-trailers --in-place \
+			--trailer="sign: $username <$useremail>" "${patches[@]}" ||
+				die "Adding Signed-off-by trailers failed"
+	fi
 
 	# concatenate the patches back
 	cat "${patches[@]}" > "${tempdir}/all.patch" ||
@@ -438,7 +452,7 @@ main() {
 			esac
 		done
 	fi
-	git am --keep-cr -3 ${signoff:+-s} ${gpgsign:+-S} "${am_options[@]}" \
+	git am --keep-cr -3 ${gpgsign:+-S} "${am_options[@]}" \
 			"${tempdir}/all.patch" || die "git am failed"
 }
 

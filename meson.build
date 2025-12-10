@@ -14,6 +14,7 @@ tests = [
   '01signoff-missing',
   '01signoff-partial',
   '01signoff-present',
+  '01signoff-multiple',
   '02bug-number',
   '02bug-url',
   '02closes-number',
@@ -31,6 +32,7 @@ tests = [
   '10threeway-disabled',
   '11combined-partof-signoff-bug',
   '11partof',
+  '12signoff-dedup',
 ]
 
 foreach t : tests
