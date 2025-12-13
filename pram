@@ -57,15 +57,6 @@ print_help() {
 	echo "  boolean options: pram.gpgsign, pram.interactive, pram.signoff, pram.partof"
 }
 
-# add_trailer <file> <line-to-add>
-add_trailer() {
-	local file=${1}
-	local line=${2}
-
-	sed -i -e "1,/^---$/s@^---\$@${line}\n\0@" "${file}" ||
-		die "Appending trailer via sed failed"
-}
-
 main() {
 	# make sure files are sorted ascending
 	local -x LC_COLLATE=C
@@ -374,7 +365,7 @@ main() {
 	fi
 
 	local patches=( "${tempdir}"/[0-9]* )
-	if [[ ${signoff} || ${partof} ]]; then
+	if [[ ${signoff} ]]; then
 		local f
 		for f in "${patches[@]}"; do
 			if [[ ${signoff} ]]; then
@@ -382,32 +373,49 @@ main() {
 					die "Commit no. ${f##*/} was not signed off by the author!"
 				fi
 			fi
-
-			if [[ ${partof} ]]; then
-				add_trailer "${f}" "Part-of: ${to_close}"
-			fi
 		done
 	fi
-
+	if [[ ${partof} ]]; then
+		local partof_conf=(
+			-c trailer.partof.key="Part-of: "
+			-c trailer.partof.ifmissing=add
+		)
+		git "${partof_conf[@]}" interpret-trailers --in-place --trailer="partof: ${to_close}" "${patches[@]}" ||
+			die "git interpret-trailers failed"
+	fi
+	local git_conf=(
+		-c trailer.bug.key="Bug: "
+		-c trailer.bug.ifexists=addIfDifferent
+		-c trailer.closes.key="Closes: "
+		-c trailer.closes.ifexists=addIfDifferent
+		-c trailer.merges.key="Merges: "
+		-c trailer.merges.ifexists=addIfDifferent
+	)
+	local git_trailers=()
 	# append bug references
 	local b
 	for b in "${bug[@]}"; do
 		[[ ${b} != *://* ]] && b=https://bugs.gentoo.org/${b}
-		add_trailer "${patches[-1]}" "Bug: ${b}"
+		git_trailers+=( --trailer="bug: ${b}" )
 	done
 	for b in "${closes[@]}"; do
 		[[ ${b} != *://* ]] && b=https://bugs.gentoo.org/${b}
-		add_trailer "${patches[-1]}" "Closes: ${b}"
+		git_trailers+=( --trailer="closes: ${b}" )
 	done
 	# append Closes: (or Merges:) to the final commit if missing
 	if [[ -n ${to_close} ]]; then
-		local trailer=Closes
-		[[ ${merge} == 1 ]] && trailer=Merges
-
-		if ! grep -q "^${trailer}: ${to_close}" "${patches[-1]}"; then
-			add_trailer "${patches[-1]}" "${trailer}: ${to_close}"
-		fi
+		local trailer=closes
+		[[ ${merge} == 1 ]] && trailer=merges
+		git_trailers+=( --trailer="${trailer}: ${to_close}" )
 	fi
+
+	# Add Bug: and Closes/Merges: tags to the last patch
+	if [[ "${#git_trailers[@]}" -gt 0 ]]; then
+		git "${git_conf[@]}" interpret-trailers --in-place \
+			"${git_trailers[@]}" "${patches[-1]}" ||
+				die "git interpret-trailers failed"
+	fi
+
 	# Append committer signed-off-by (only if missing)
 	if [[ -n ${signoff} ]]; then
 		local username="$(git config user.name)"

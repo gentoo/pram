@@ -88,7 +88,7 @@ cat > three-commits.patch <<-EOF
 	2.49.0
 EOF
 
-bash "${INITDIR}"/../pram --no-gitconfig -e true -G -I -s -P ./three-commits.patch
+bash "${INITDIR}"/../pram --no-gitconfig -e true -G -I -s -b 314152 -b 314156 -c 314154 --link-to https://codeberg.org/gentoo/gentoo/pull/123 ./three-commits.patch
 
 git log --format='%ae%n%an%n%aI%n%B' -3 > git-log.txt
 diff -u - git-log.txt <<-EOF
@@ -98,6 +98,11 @@ diff -u - git-log.txt <<-EOF
 	Third patch
 
 	Signed-off-by: Other person <other@example.com>
+	Part-of: https://codeberg.org/gentoo/gentoo/pull/123
+	Bug: https://bugs.gentoo.org/314152
+	Bug: https://bugs.gentoo.org/314156
+	Closes: https://bugs.gentoo.org/314154
+	Closes: https://codeberg.org/gentoo/gentoo/pull/123
 	Signed-off-by: PRam test <pram@example.com>
 
 	other@example.com
@@ -107,6 +112,7 @@ diff -u - git-log.txt <<-EOF
 
 	Signed-off-by: Other person <other@example.com>
 	Signed-off-by: PRam test <pram@example.com>
+	Part-of: https://codeberg.org/gentoo/gentoo/pull/123
 
 	other@example.com
 	Other person
@@ -114,6 +120,7 @@ diff -u - git-log.txt <<-EOF
 	First patch
 
 	Signed-off-by: Other person <other@example.com>
+	Part-of: https://codeberg.org/gentoo/gentoo/pull/123
 	Signed-off-by: PRam test <pram@example.com>
 
 EOF
