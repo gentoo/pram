@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# (c) 2019-2025 Michał Górny
+# (c) 2019-2026 Michał Górny
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-VERSION=15
+VERSION=16
 
 die() {
 	echo "${@}" >&2
