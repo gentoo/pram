@@ -1,7 +1,9 @@
 project('pram',
-  version: '16',
+  version: run_command(
+    'sed', '-n', '-e', 's:^VERSION=::p', 'gagit',
+    check: true).stdout().strip(),
   license: 'GPL-2.0-or-later',
-  meson_version: '>=0.49.0')
+  meson_version: '>=0.60.3')
 
 install_data('pram',
   install_dir: get_option('bindir'),
